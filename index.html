@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOAA ENSO summary</title>
-    
-    <meta id="enso-json-payload" content="">
-    
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; color: #0f172a; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
@@ -24,56 +21,32 @@
 
     <div class="card">
         <h2>NOAA ENSO summary</h2>
-        <div id="loading">
-            📡 Scraping live data from Climate Prediction Center...
-            <div id="error-log"></div>
-        </div>
+        <div id="loading">📡 Scraping live data from Climate Prediction Center...<div id="error-log"></div></div>
         
         <div id="content" style="display: none;">
-            <div class="data-row">
-                <span class="data-label">1. Issued By</span> 
-                <span id="val-issued"></span>
-            </div>
-            <div class="data-row">
-                <span class="data-label">2. ENSO Alert System Status</span> 
-                <span id="val-status" class="highlight"></span>
-            </div>
-            <div class="data-row">
-                <span class="data-label">3. Synopsis</span> 
-                <span id="val-synopsis"></span>
-            </div>
-            <div class="data-row">
-                <span class="data-label">4. Latest Data</span> 
-                <span id="val-nino"></span>
-            </div>
-            <div class="gif-container">
-                <span class="data-label">5. Forecast Model (Figure 06)</span>
-                <img id="val-img" src="" alt="ENSO Figure 06">
-            </div>
+            <div class="data-row"><span class="data-label">1. Issued By</span><span id="val-issued"></span></div>
+            <div class="data-row"><span class="data-label">2. ENSO Alert System Status</span><span id="val-status" class="highlight"></span></div>
+            <div class="data-row"><span class="data-label">3. Synopsis</span><span id="val-synopsis"></span></div>
+            <div class="data-row"><span class="data-label">4. Latest Data</span><span id="val-nino"></span></div>
+            <div class="gif-container"><span class="data-label">5. Forecast Model (Figure 06)</span><img id="val-img" src="" alt="ENSO Figure 06"></div>
         </div>
     </div>
 
     <script>
         async function scrapeNOAA() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
-            
-            // Using a stronger, more reliable CORS proxy
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
             
             try {
                 const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error(`Network response was not OK (Status: ${response.status})`);
+                if (!response.ok) throw new Error(`Network response was not OK`);
                 
                 const htmlText = await response.text();
-                if (!htmlText || htmlText.trim() === "") throw new Error("Received empty data from NOAA proxy.");
-                
-                // Safely parse the HTML to decode weird characters (like &ntilde; to ñ) and strip tags
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlText, 'text/html');
                 let cleanText = doc.body.textContent || doc.body.innerText;
-                cleanText = cleanText.replace(/\s+/g, ' '); // Clean up extra spaces
+                cleanText = cleanText.replace(/\s+/g, ' '); 
                 
-                // --- Extractor Logic ---
                 const issuerMatch = cleanText.match(/issued by\s+(CLIMATE PREDICTION CENTER.*?NWS\s+\d{1,2}\s+[a-zA-Z]+\s+\d{4})/i);
                 const issuedBy = issuerMatch ? issuerMatch[1].trim() : "CLIMATE PREDICTION CENTER/NCEP/NWS";
                 
@@ -88,27 +61,23 @@
                 
                 const figureUrl = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
 
-                // Populate UI
                 document.getElementById('val-issued').innerText = issuedBy;
                 document.getElementById('val-status').innerText = status;
                 document.getElementById('val-synopsis').innerText = synopsis;
                 document.getElementById('val-nino').innerText = nino34;
                 document.getElementById('val-img').src = figureUrl;
                 
-                // Package data into JSON for the main dashboard to read securely
-                const payload = { issuedBy, status, synopsis, nino34, figureUrl };
-                document.getElementById('enso-json-payload').content = JSON.stringify(payload);
-                
-                // Hide loading message and show content
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').style.display = 'block';
 
+                // NEW: Broadcast the data out to the Main Dashboard!
+                const payload = { issuedBy, status, synopsis, nino34, figureUrl };
+                window.parent.postMessage(payload, "*");
+
             } catch (err) {
-                document.getElementById('loading').innerHTML = `⚠️ Error scraping data. <br><br> <span id='error-log'>Technical details: ${err.message}</span>`;
-                console.error(err);
+                document.getElementById('loading').innerHTML = `⚠️ Error scraping data.`;
             }
         }
-        
         scrapeNOAA();
     </script>
 </body>
