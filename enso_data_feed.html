@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOAA ENSO Extracted Data Feed</title>
+    
+    <meta id="enso-json-payload" content="">
+    
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; color: #0f172a; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        h2 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
+        .data-row { margin-bottom: 18px; font-size: 15px; line-height: 1.6; }
+        .data-label { font-weight: bold; color: #334155; display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;}
+        .highlight { background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
+        .gif-container { margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0; }
+        img { max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 10px; }
+        #loading { text-align: center; color: #64748b; font-style: italic; font-size: 16px; padding: 40px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>NOAA ENSO Live Extraction</h2>
+        <div id="loading">📡 Scraping live data from Climate Prediction Center...</div>
+        
+        <div id="content" style="display: none;">
+            <div class="data-row">
+                <span class="data-label">1. Issued By</span> 
+                <span id="val-issued"></span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">2. ENSO Alert System Status</span> 
+                <span id="val-status" class="highlight"></span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">3. Synopsis</span> 
+                <span id="val-synopsis"></span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">4. Latest Data</span> 
+                <span id="val-nino"></span>
+            </div>
+            <div class="gif-container">
+                <span class="data-label">5. Forecast Model (Figure 06)</span>
+                <img id="val-img" src="" alt="ENSO Figure 06">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function scrapeNOAA() {
+            const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
+            // Bypass CORS restrictions using allorigins
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+            
+            try {
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                // Remove HTML tags and extra spacing to make text regex matching flawless
+                let cleanText = data.contents.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+                
+                // --- 1. Issued By & Date ---
+                const issuerMatch = cleanText.match(/issued by\s+(CLIMATE PREDICTION CENTER.*?NWS\s+\d{1,2}\s+[a-zA-Z]+\s+\d{4})/i);
+                const issuedBy = issuerMatch ? issuerMatch[1].trim() : "CLIMATE PREDICTION CENTER/NCEP/NWS";
+                
+                // --- 2. ENSO Alert System Status ---
+                const statusMatch = cleanText.match(/ENSO Alert System Status:\s*(.*?)\s*Synopsis:/i);
+                const status = statusMatch ? statusMatch[1].trim() : "Data unavailable";
+                
+                // --- 3. Synopsis ---
+                const synopsisMatch = cleanText.match(/Synopsis:\s*(.*?)(?:During the last month|In summary)/i);
+                const synopsis = synopsisMatch ? synopsisMatch[1].trim() : "Data unavailable";
+                
+                // --- 4. Latest weekly Niño-3.4 ---
+                const ninoMatch = cleanText.match(/(The latest weekly Niño-3\.4 index value was\s*[+-]?\d+\.\d+[^C]*C)/i);
+                const nino34 = ninoMatch ? ninoMatch[1].trim() : "Niño-3.4 value not found";
+                
+                // --- 5. Figure 06 ---
+                const figureUrl = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
+
+                // Populate the UI for standalone viewing
+                document.getElementById('val-issued').innerText = issuedBy;
+                document.getElementById('val-status').innerText = status;
+                document.getElementById('val-synopsis').innerText = synopsis;
+                document.getElementById('val-nino').innerText = nino34;
+                document.getElementById('val-img').src = figureUrl;
+                
+                // Package data into JSON and store in the <meta> tag for the Main Dashboard
+                const payload = { issuedBy, status, synopsis, nino34, figureUrl };
+                document.getElementById('enso-json-payload').content = JSON.stringify(payload);
+                
+                // Reveal content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (err) {
+                document.getElementById('loading').innerText = "⚠️ Error scraping data. Please check connection.";
+                console.error(err);
+            }
+        }
+        
+        // Run scraper on page load
+        scrapeNOAA();
+    </script>
+</body>
+</html>
