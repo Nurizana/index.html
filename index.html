@@ -38,11 +38,56 @@
         .archive-list a:hover { text-decoration: underline; }
         .file-icon { font-size: 20px; }
 
+        /* Tooltip (Pop-up) Styling */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+            border-bottom: 2px dotted #b45309;
+            color: #b45309;
+            font-weight: 900;
+        }
+        
+        .tooltip-trigger:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 140%; 
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: normal;
+            width: max-content;
+            max-width: 250px;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Tooltip Arrow */
+        .tooltip-trigger:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 7px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+            z-index: 10;
+        }
+
         @media print {
             .print-btn, .tab-container { display: none; }
             body { background: white; padding: 0; }
             .card { box-shadow: none; border: none; padding: 0; max-width: 100%; }
             .gif-container { break-inside: avoid; }
+            .tooltip-trigger { border: none; text-decoration: none; }
+            .tooltip-trigger::after, .tooltip-trigger::before { display: none !important; }
         }
     </style>
 </head>
@@ -86,13 +131,30 @@
     <script>
         // Function to handle tab switching
         function switchTab(event, tabId) {
-            // Hide all contents and remove active class from buttons
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Show targeted content and highlight corresponding button
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+
+        // Function to wrap specific keywords with tooltips
+        function applyTooltips(text) {
+            const definitions = {
+                "final advisory": "Issued after El Niño or La Niña conditions have ended.",
+                "advisory": "Issued when El Niño or La Niña conditions are observed and expected to continue.",
+                "watch": "Issued when conditions are favorable for the development of El Niño or La Niña conditions within the next six months.",
+                "not active": "ENSO Alert System is not active. Neither El Niño nor La Niña are observed or expected in coming 6 months."
+            };
+
+            // Regular expression to find any of the target phrases (case-insensitive)
+            const regex = /(Final advisory|Advisory|Watch|Not Active)/gi;
+            
+            // Replace the found word with a span containing the tooltip data
+            return text.replace(regex, (match) => {
+                const key = match.toLowerCase();
+                return `<span class="tooltip-trigger" data-tooltip="${definitions[key]}">${match}</span>`;
+            });
         }
 
         // Original Scraper logic
@@ -114,7 +176,10 @@
                 const issuedBy = issuerMatch ? issuerMatch[1].trim() : "CLIMATE PREDICTION CENTER/NCEP/NWS";
                 
                 const statusMatch = cleanText.match(/ENSO Alert System Status:\s*(.*?)\s*Synopsis:/i);
-                const status = statusMatch ? statusMatch[1].trim() : "Data unavailable";
+                const rawStatus = statusMatch ? statusMatch[1].trim() : "Data unavailable";
+                
+                // Apply the tooltips to the status string before inserting it
+                const statusWithTooltips = applyTooltips(rawStatus);
                 
                 const synopsisMatch = cleanText.match(/Synopsis:\s*(.*?)(?:During the last month|In summary|The latest weekly)/i);
                 const synopsis = synopsisMatch ? synopsisMatch[1].trim() : "Data unavailable";
@@ -126,7 +191,10 @@
                 const figure06Url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
 
                 document.getElementById('val-issued').innerText = issuedBy;
-                document.getElementById('val-status').innerText = status;
+                
+                // Use innerHTML instead of innerText so the <span> tags render correctly
+                document.getElementById('val-status').innerHTML = statusWithTooltips;
+                
                 document.getElementById('val-synopsis').innerText = synopsis;
                 document.getElementById('val-nino').innerText = nino34;
                 document.getElementById('val-img-01').src = figure01Url;
