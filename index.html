@@ -7,7 +7,15 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; color: #0f172a; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
-        h2 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
+        
+        /* Updated header layout to accommodate the button */
+        .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: #1e40af; margin: 0; }
+        
+        /* Print button styling */
+        .print-btn { background: #1e40af; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; }
+        .print-btn:hover { background: #1e3a8a; }
+
         .data-row { margin-bottom: 18px; font-size: 15px; line-height: 1.6; }
         .data-label { font-weight: bold; color: #334155; display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;}
         .highlight { background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
@@ -15,12 +23,24 @@
         img { max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 10px; }
         #loading { text-align: center; color: #64748b; font-style: italic; font-size: 16px; padding: 40px; }
         #error-log { color: #ef4444; font-size: 13px; margin-top: 10px; font-style: normal; display: block; }
+
+        /* Print-specific styles to hide the button and clean up layout for PDF */
+        @media print {
+            .print-btn { display: none; }
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+            .gif-container { break-inside: avoid; } /* Prevents images from being split across PDF pages */
+        }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>NOAA ENSO summary</h2>
+        <div class="header-container">
+            <h2>NOAA ENSO summary</h2>
+            <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+        </div>
+        
         <div id="loading">📡 Reading forecast from Climate Prediction Center...<div id="error-log"></div></div>
         
         <div id="content" style="display: none;">
@@ -78,7 +98,7 @@
                 window.parent.postMessage(payload, "*");
 
             } catch (err) {
-                document.getElementById('loading').innerHTML = `⚠️ Error scraping data.`;
+                document.getElementById('loading').innerHTML = `⚠️ Error scraping data. <span id="error-log">${err.message}</span>`;
             }
         }
         scrapeNOAA();
