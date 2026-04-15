@@ -21,14 +21,15 @@
 
     <div class="card">
         <h2>NOAA ENSO summary</h2>
-        <div id="loading">📡 Scraping live data from Climate Prediction Center...<div id="error-log"></div></div>
+        <div id="loading">📡 Reading forecast from Climate Prediction Center...<div id="error-log"></div></div>
         
         <div id="content" style="display: none;">
             <div class="data-row"><span class="data-label">1. Issued By</span><span id="val-issued"></span></div>
             <div class="data-row"><span class="data-label">2. ENSO Alert System Status</span><span id="val-status" class="highlight"></span></div>
             <div class="data-row"><span class="data-label">3. Synopsis</span><span id="val-synopsis"></span></div>
             <div class="data-row"><span class="data-label">4. Latest Data</span><span id="val-nino"></span></div>
-            <div class="gif-container"><span class="data-label">5. Forecast Model (Figure 06)</span><img id="val-img" src="" alt="ENSO Figure 06"></div>
+            <div class="gif-container"><span class="data-label">5. SST Anomalies (Figure 01)</span><img id="val-img-01" src="" alt="ENSO Figure 01"></div>
+            <div class="gif-container"><span class="data-label">6. Forecast Model (Figure 06)</span><img id="val-img-06" src="" alt="ENSO Figure 06"></div>
         </div>
     </div>
 
@@ -59,19 +60,21 @@
                 const ninoMatch = cleanText.match(/(The latest weekly Niño-3\.4 index value was\s*[+-]?\d+\.\d+[^C]*C)/i);
                 const nino34 = ninoMatch ? ninoMatch[1].trim() : "Niño-3.4 value not found";
                 
-                const figureUrl = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
+                const figure01Url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure01.gif";
+                const figure06Url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
 
                 document.getElementById('val-issued').innerText = issuedBy;
                 document.getElementById('val-status').innerText = status;
                 document.getElementById('val-synopsis').innerText = synopsis;
                 document.getElementById('val-nino').innerText = nino34;
-                document.getElementById('val-img').src = figureUrl;
+                document.getElementById('val-img-01').src = figure01Url;
+                document.getElementById('val-img-06').src = figure06Url;
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').style.display = 'block';
 
                 // NEW: Broadcast the data out to the Main Dashboard!
-                const payload = { issuedBy, status, synopsis, nino34, figureUrl };
+                const payload = { issuedBy, status, synopsis, nino34, figure01Url, figureUrl: figure06Url };
                 window.parent.postMessage(payload, "*");
 
             } catch (err) {
