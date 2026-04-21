@@ -6,13 +6,13 @@
     <title>NOAA ENSO Summary Archive</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; color: #0f172a; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
         
         .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
         h2 { color: #1e40af; margin: 0; }
         
         /* Tab Styling */
-        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { background: #e2e8f0; color: #334155; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s; }
         .tab-btn.active { background: #1e40af; color: white; }
         .tab-btn:hover:not(.active) { background: #cbd5e1; }
@@ -28,8 +28,9 @@
         .highlight { background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
         .gif-container { margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0; }
         img { max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 10px; }
-        #loading { text-align: center; color: #64748b; font-style: italic; font-size: 16px; padding: 40px; }
-        #error-log { color: #ef4444; font-size: 13px; margin-top: 10px; font-style: normal; display: block; }
+        
+        .loading-text { text-align: center; color: #64748b; font-style: italic; font-size: 16px; padding: 40px; }
+        .error-log { color: #ef4444; font-size: 13px; margin-top: 10px; font-style: normal; display: block; }
 
         /* Archive File List Styling */
         .archive-list { list-style: none; padding: 0; }
@@ -37,6 +38,22 @@
         .archive-list a { text-decoration: none; color: #1e40af; font-weight: bold; display: flex; align-items: center; gap: 10px; width: 100%; }
         .archive-list a:hover { text-decoration: underline; }
         .file-icon { font-size: 20px; }
+
+        /* RONI Table Styling */
+        .roni-header { text-align: center; margin-bottom: 20px; }
+        .roni-header h3 { margin: 0 0 5px 0; font-size: 22px; }
+        .roni-header h4 { margin: 0; font-size: 16px; color: #475569; font-weight: normal; }
+        
+        .notice-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #b45309; padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #334155; margin-bottom: 20px; border-radius: 4px; }
+        .notice-box strong { color: #0f172a; }
+        
+        .roni-table-wrapper { overflow-x: auto; }
+        .roni-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: center; }
+        .roni-table th, .roni-table td { border: 1px solid #cbd5e1; padding: 8px; }
+        .roni-table th { background: #f1f5f9; color: #0f172a; }
+        .roni-table td.warm { color: red; font-weight: bold; }
+        .roni-table td.cold { color: blue; font-weight: bold; }
+        .roni-table td.year-col { font-weight: bold; color: #0f172a; background: #f8fafc; }
 
         /* Tooltip (Pop-up) Styling */
         .tooltip-trigger {
@@ -68,7 +85,6 @@
             text-align: center;
         }
 
-        /* Tooltip Arrow */
         .tooltip-trigger:hover::before {
             content: '';
             position: absolute;
@@ -101,11 +117,12 @@
 
         <div class="tab-container">
             <button class="tab-btn active" onclick="switchTab(event, 'latest')">Latest Forecast</button>
+            <button class="tab-btn" onclick="switchTab(event, 'roni')">RONI Table</button>
             <button class="tab-btn" onclick="switchTab(event, 'archive')">Archive</button>
         </div>
         
         <div id="latest" class="tab-content active">
-            <div id="loading">📡 Reading forecast from Climate Prediction Center...<div id="error-log"></div></div>
+            <div id="loading" class="loading-text">📡 Reading forecast from Climate Prediction Center...<div id="error-log" class="error-log"></div></div>
             
             <div id="content" style="display: none;">
                 <div class="data-row"><span class="data-label">1. Issued By</span><span id="val-issued"></span></div>
@@ -114,6 +131,43 @@
                 <div class="data-row"><span class="data-label">4. Latest Data</span><span id="val-nino"></span></div>
                 <div class="gif-container"><span class="data-label">5. SST Anomalies (Figure 01)</span><img id="val-img-01" src="" alt="ENSO Figure 01"></div>
                 <div class="gif-container"><span class="data-label">6. Forecast Model (Figure 06)</span><img id="val-img-06" src="" alt="ENSO Figure 06"></div>
+            </div>
+        </div>
+
+        <div id="roni" class="tab-content">
+            <div class="roni-header">
+                <h3>Relative Oceanic Niño Index (RONI):</h3>
+                <h4>Historical El Niño / La Niña episodes (1950–Present)</h4>
+            </div>
+
+            <div class="notice-box">
+                <strong>Notice:</strong> This page is updated by the 5th of each month. Because of the high frequency filter applied to the ERSSTv5 data (Huang et al. 2017, J. Climate), RONI values may change up to two months after the initial "real time" value is posted. Therefore, the most recent RONI values should be considered an estimate.
+            </div>
+
+            <div id="roni-loading" class="loading-text">📡 Fetching live RONI data...<div id="roni-error" class="error-log"></div></div>
+
+            <div class="roni-table-wrapper" id="roni-content" style="display: none;">
+                <table class="roni-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>DJF</th>
+                            <th>JFM</th>
+                            <th>FMA</th>
+                            <th>MAM</th>
+                            <th>AMJ</th>
+                            <th>MJJ</th>
+                            <th>JJA</th>
+                            <th>JAS</th>
+                            <th>ASO</th>
+                            <th>SON</th>
+                            <th>OND</th>
+                            <th>NDJ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roni-tbody">
+                        </tbody>
+                </table>
             </div>
         </div>
 
@@ -147,17 +201,15 @@
                 "not active": "ENSO Alert System is not active. Neither El Niño nor La Niña are observed or expected in coming 6 months."
             };
 
-            // Regular expression to find any of the target phrases (case-insensitive)
             const regex = /(Final advisory|Advisory|Watch|Not Active)/gi;
             
-            // Replace the found word with a span containing the tooltip data
             return text.replace(regex, (match) => {
                 const key = match.toLowerCase();
                 return `<span class="tooltip-trigger" data-tooltip="${definitions[key]}">${match}</span>`;
             });
         }
 
-        // Original Scraper logic
+        // --- SCRAPE LATEST FORECAST DATA ---
         async function scrapeNOAA() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
@@ -178,7 +230,6 @@
                 const statusMatch = cleanText.match(/ENSO Alert System Status:\s*(.*?)\s*Synopsis:/i);
                 const rawStatus = statusMatch ? statusMatch[1].trim() : "Data unavailable";
                 
-                // Apply the tooltips to the status string before inserting it
                 const statusWithTooltips = applyTooltips(rawStatus);
                 
                 const synopsisMatch = cleanText.match(/Synopsis:\s*(.*?)(?:During the last month|In summary|The latest weekly)/i);
@@ -191,10 +242,7 @@
                 const figure06Url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure06.gif";
 
                 document.getElementById('val-issued').innerText = issuedBy;
-                
-                // Use innerHTML instead of innerText so the <span> tags render correctly
                 document.getElementById('val-status').innerHTML = statusWithTooltips;
-                
                 document.getElementById('val-synopsis').innerText = synopsis;
                 document.getElementById('val-nino').innerText = nino34;
                 document.getElementById('val-img-01').src = figure01Url;
@@ -204,10 +252,122 @@
                 document.getElementById('content').style.display = 'block';
 
             } catch (err) {
-                document.getElementById('loading').innerHTML = `⚠️ Error scraping data. <span id="error-log">${err.message}</span>`;
+                document.getElementById('loading').innerHTML = `⚠️ Error scraping forecast data. <span class="error-log">${err.message}</span>`;
             }
         }
+
+        // --- SCRAPE & RENDER RONI TABLE DATA ---
+        async function fetchRONIData() {
+            const targetUrl = 'https://www.cpc.ncep.noaa.gov/data/indices/RONI.ascii.txt';
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('Network response for RONI data was not OK');
+                
+                const text = await response.text();
+                const lines = text.split('\n');
+                
+                let dataList = [];
+                
+                // Parse lines matching expected NOAA TXT format
+                for (let line of lines) {
+                    let parts = line.trim().split(/\s+/);
+                    if (parts.length === 3 && !isNaN(parts[1]) && !isNaN(parts[2])) {
+                        let season = parts[0];
+                        let year = parseInt(parts[1]);
+                        let val = parseFloat(parts[2]);
+                        
+                        // Round value to 1 decimal point for UI
+                        let rounded = (Math.round(val * 10) / 10).toFixed(1);
+                        if (rounded === "-0.0") rounded = "0.0"; 
+
+                        dataList.push({
+                            season: season,
+                            year: year,
+                            val: parseFloat(rounded),
+                            display: rounded,
+                            colorClass: '' // Will hold 'warm' or 'cold' later
+                        });
+                    }
+                }
+
+                // Identify 5 consecutive overlapping seasons threshold
+                // Calculate Warm Periods (>= 0.5 for 5 in a row)
+                let warmCount = 0;
+                for (let i = 0; i < dataList.length; i++) {
+                    if (dataList[i].val >= 0.5) {
+                        warmCount++;
+                    } else {
+                        if (warmCount >= 5) {
+                            for (let j = 1; j <= warmCount; j++) { dataList[i - j].colorClass = 'warm'; }
+                        }
+                        warmCount = 0;
+                    }
+                }
+                if (warmCount >= 5) { // Catch sequence ending perfectly on the array
+                    for (let j = 1; j <= warmCount; j++) { dataList[dataList.length - j].colorClass = 'warm'; }
+                }
+
+                // Calculate Cold Periods (<= -0.5 for 5 in a row)
+                let coldCount = 0;
+                for (let i = 0; i < dataList.length; i++) {
+                    if (dataList[i].val <= -0.5) {
+                        coldCount++;
+                    } else {
+                        if (coldCount >= 5) {
+                            for (let j = 1; j <= coldCount; j++) { dataList[i - j].colorClass = 'cold'; }
+                        }
+                        coldCount = 0;
+                    }
+                }
+                if (coldCount >= 5) { 
+                    for (let j = 1; j <= coldCount; j++) { dataList[dataList.length - j].colorClass = 'cold'; }
+                }
+
+                // Group data by Year
+                let yearsMap = {};
+                dataList.forEach(item => {
+                    if (!yearsMap[item.year]) yearsMap[item.year] = {};
+                    yearsMap[item.year][item.season] = item;
+                });
+
+                const seasonsOrder = ['DJF', 'JFM', 'FMA', 'MAM', 'AMJ', 'MJJ', 'JJA', 'JAS', 'ASO', 'SON', 'OND', 'NDJ'];
+                const tbody = document.getElementById('roni-tbody');
+
+                // Render Table
+                Object.keys(yearsMap).forEach(year => {
+                    let tr = document.createElement('tr');
+                    
+                    let tdYear = document.createElement('td');
+                    tdYear.className = 'year-col';
+                    tdYear.innerText = year;
+                    tr.appendChild(tdYear);
+
+                    seasonsOrder.forEach(s => {
+                        let td = document.createElement('td');
+                        let item = yearsMap[year][s];
+                        if (item) {
+                            td.innerText = item.display;
+                            if (item.colorClass) td.classList.add(item.colorClass);
+                        }
+                        tr.appendChild(td);
+                    });
+
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('roni-loading').style.display = 'none';
+                document.getElementById('roni-content').style.display = 'block';
+
+            } catch (err) {
+                document.getElementById('roni-loading').innerHTML = `⚠️ Error parsing RONI data. <span class="error-log">${err.message}</span>`;
+            }
+        }
+
+        // Initialize both fetch requests
         scrapeNOAA();
+        fetchRONIData();
     </script>
 </body>
 </html>
