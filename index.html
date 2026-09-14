@@ -234,14 +234,13 @@
         // --- SCRAPE LATEST FORECAST DATA ---
         async function scrapeNOAA() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${targetUrl}`;
             
             try {
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error(`Network response was not OK`);
                 
-                const data = await response.json();
-                const htmlText = data.contents;
+                const htmlText = await response.text();
                 
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlText, 'text/html');
@@ -259,7 +258,7 @@
                 const synopsisMatch = cleanText.match(/Synopsis:\s*(.*?)(?:During the last month|In summary|The latest weekly)/i);
                 const synopsis = synopsisMatch ? synopsisMatch[1].trim() : "Data unavailable";
                 
-                const ninoMatch = cleanText.match(/(The latest weekly Niño-3\.4 index value was\s*[+-]?\d+\.\d+[^C]*C)/i);
+                const ninoMatch = cleanText.match(/([^.]*Niño-3\.4[^.]*\.)/i);
                 const nino34 = ninoMatch ? ninoMatch[1].trim() : "Niño-3.4 value not found";
                 
                 const figure01Url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure01.gif";
@@ -283,14 +282,13 @@
         // --- SCRAPE & RENDER RONI TABLE DATA ---
         async function fetchRONIData() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/data/indices/RONI.ascii.txt';
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${targetUrl}`;
 
             try {
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error('Network response for RONI data was not OK');
                 
-                const data = await response.json();
-                const text = data.contents;
+                const text = await response.text();
                 const lines = text.split('\n');
                 
                 let dataList = [];
