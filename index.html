@@ -173,19 +173,16 @@
 
         <div id="archive" class="tab-content">
             <ul class="archive-list">
-                <!-- New File Uploaded in September 2026 -->
                 <li>
                     <a href="https://nurizana.github.io/ENSO-Summary-Archive/NOAA%20ENSO%20Summary%20Archive_2026_September_10.pdf" target="_blank" title="View PDF Archive">
                         <span class="file-icon">📄</span> NOAA ENSO Summary Archive_2026_September_10.pdf
                     </a>
                 </li>
-                <!-- File Uploaded in August 2026 -->
                 <li>
                     <a href="https://nurizana.github.io/ENSO-Summary-Archive/NOAA%20ENSO%20Summary_2026_August_13.pdf" target="_blank" title="View PDF Archive">
                         <span class="file-icon">📄</span> NOAA ENSO Summary_2026_August_13.pdf
                     </a>
                 </li>
-                <!-- File Uploaded in July 2026 -->
                 <li>
                     <a href="https://nurizana.github.io/ENSO-Summary-Archive/NOAA%20ENSO%20Summary_2026_July_09.pdf" target="_blank" title="View PDF Archive">
                         <span class="file-icon">📄</span> NOAA ENSO Summary_2026_July_09.pdf
@@ -240,14 +237,12 @@
         // --- SCRAPE LATEST FORECAST DATA ---
         async function scrapeNOAA() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
-            // UPDATED: Using corsproxy.io instead of allorigins
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
             
             try {
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error(`Network response was not OK`);
                 
-                // UPDATED: Parse as text directly
                 const htmlText = await response.text();
                 
                 const parser = new DOMParser();
@@ -290,14 +285,12 @@
         // --- SCRAPE & RENDER RONI TABLE DATA ---
         async function fetchRONIData() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/data/indices/RONI.ascii.txt';
-            // UPDATED: Using corsproxy.io instead of allorigins
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
 
             try {
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error('Network response for RONI data was not OK');
                 
-                // UPDATED: Parse as text directly
                 const text = await response.text();
                 const lines = text.split('\n');
                 
