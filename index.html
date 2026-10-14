@@ -237,7 +237,8 @@
         // --- SCRAPE LATEST FORECAST DATA ---
         async function scrapeNOAA() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml';
-            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
+            // UPDATED: Using thingproxy to bypass CORS
+            const proxyUrl = `https://thingproxy.freeboard.io/fetch/${targetUrl}`;
             
             try {
                 const response = await fetch(proxyUrl);
@@ -285,7 +286,8 @@
         // --- SCRAPE & RENDER RONI TABLE DATA ---
         async function fetchRONIData() {
             const targetUrl = 'https://www.cpc.ncep.noaa.gov/data/indices/RONI.ascii.txt';
-            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
+            // UPDATED: Using thingproxy to bypass CORS
+            const proxyUrl = `https://thingproxy.freeboard.io/fetch/${targetUrl}`;
 
             try {
                 const response = await fetch(proxyUrl);
